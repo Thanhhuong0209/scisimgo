@@ -26,12 +26,12 @@ python notebooks/sir-analysis/sir_analysis.py
 
 ## Features
 
-- 🚀 **High-Performance Go Engine**: Concurrent simulation with goroutines and channels
-- 📊 **Scientific Models**: SIR epidemiology, Lotka-Volterra ecology, Orbital mechanics
-- 🔬 **Data Science Pipeline**: EDA, statistics, machine learning, visualization
-- 📈 **Real-time Export**: CSV/JSON data export for analysis
-- 🐳 **Containerized**: Docker support for easy deployment
-- 🔄 **CI/CD Ready**: Automated testing and deployment workflows
+- **High-Performance Go Engine**: Concurrent simulation with goroutines and channels
+- **Scientific Models**: SIR epidemiology, Lotka-Volterra ecology, Orbital mechanics
+- **Data Science Pipeline**: EDA, statistics, machine learning, visualization
+- **Real-time Export**: CSV/JSON data export for analysis
+- **Containerized**: Docker support for easy deployment
+- **CI/CD Ready**: Automated testing and deployment workflows
 
 ## Abstract
 
