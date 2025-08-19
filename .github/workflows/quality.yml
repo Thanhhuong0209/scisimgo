@@ -94,7 +94,7 @@ jobs:
         echo "Test coverage: $COVERAGE%"
         
     - name: Upload coverage
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: go-coverage-${{ matrix.go-version }}
         path: coverage-${{ matrix.go-version }}.out
@@ -177,7 +177,7 @@ jobs:
         echo "Test coverage: $COVERAGE%"
         
     - name: Upload reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: python-reports-${{ matrix.python-version }}
         path: |
@@ -222,7 +222,7 @@ jobs:
         pytest notebooks/ scripts/ --benchmark-only --benchmark-sort=name > python-benchmarks.txt
         
     - name: Upload benchmark results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: benchmark-results
         path: |
