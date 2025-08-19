@@ -1,6 +1,37 @@
 # SciSimGo: Scientific Simulation Engine with Data Science Integration
 
+[![Go Version](https://img.shields.io/badge/Go-1.21+-blue.svg)](https://golang.org)
+[![Python Version](https://img.shields.io/badge/Python-3.9+-green.svg)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Thanhhuong0209/scisimgo)](https://goreportcard.com/report/github.com/Thanhhuong0209/scisimgo)
+[![CI/CD Status](https://github.com/Thanhhuong0209/scisimgo/workflows/SciSimGo%20CI%2FCD%20Pipeline/badge.svg)](https://github.com/Thanhhuong0209/scisimgo/actions)
+
 > A comprehensive simulation framework combining Go-based computational engines with advanced data analysis pipelines for scientific research and educational applications.
+
+## Quick Start
+
+```bash
+# Clone and setup
+git clone https://github.com/Thanhhuong0209/scisimgo.git
+cd scisimgo
+
+# Run simulations
+go run cmd/sir-simulator/main.go --population 10000 --initial-infected 100 --duration 100s
+go run cmd/predator-prey/main.go --initial-prey 1000 --initial-predator 100 --duration 200s
+go run cmd/orbital-sim/main.go --time-step 1000 --duration 300s
+
+# Analyze data
+python notebooks/sir-analysis/sir_analysis.py
+```
+
+## Features
+
+- 🚀 **High-Performance Go Engine**: Concurrent simulation with goroutines and channels
+- 📊 **Scientific Models**: SIR epidemiology, Lotka-Volterra ecology, Orbital mechanics
+- 🔬 **Data Science Pipeline**: EDA, statistics, machine learning, visualization
+- 📈 **Real-time Export**: CSV/JSON data export for analysis
+- 🐳 **Containerized**: Docker support for easy deployment
+- 🔄 **CI/CD Ready**: Automated testing and deployment workflows
 
 ## Abstract
 
