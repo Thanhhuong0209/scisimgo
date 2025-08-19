@@ -29,7 +29,7 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       
     - name: Set up Go
       uses: actions/setup-go@v4
@@ -82,7 +82,7 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -140,7 +140,7 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       
     - name: Run Trivy vulnerability scanner on Dockerfile
       uses: aquasecurity/trivy-action@master
@@ -172,7 +172,7 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -202,7 +202,7 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       
     - name: Generate Go dependency graph
       run: |
