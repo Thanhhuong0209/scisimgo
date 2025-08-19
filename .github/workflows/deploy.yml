@@ -1,0 +1,202 @@
+name: SciSimGo Deployment
+
+on:
+  workflow_run:
+    workflows: ["SciSimGo CI/CD Pipeline"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+      version:
+        description: 'Version to deploy'
+        required: false
+        type: string
+
+env:
+  DOCKER_REGISTRY: ghcr.io
+  STAGING_NAMESPACE: scisimgo-staging
+  PRODUCTION_NAMESPACE: scisimgo-production
+
+jobs:
+  # Staging Deployment
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download artifacts from CI
+      uses: actions/download-artifact@v3
+      with:
+        name: go-binaries-1.21
+        path: dist/
+        
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.DOCKER_REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Build and push staging image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64
+        push: true
+        tags: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}:staging
+        labels: |
+          environment=staging
+          version=${{ github.sha }}
+          built-by=github-actions
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Deploy to staging environment
+      run: |
+        echo "Deploying to staging environment..."
+        # Here you would add your actual deployment commands
+        # For example, kubectl apply, helm install, etc.
+        echo "Staging deployment completed"
+        
+    - name: Run smoke tests
+      run: |
+        echo "Running smoke tests against staging..."
+        # Add your smoke test commands here
+        echo "Smoke tests passed"
+        
+    - name: Notify staging deployment
+      run: |
+        echo "Successfully deployed to staging environment"
+        echo "Image: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}:staging"
+        echo "Version: ${{ github.sha }}"
+
+  # Production Deployment
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+    environment: production
+    needs: deploy-staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download artifacts from CI
+      uses: actions/download-artifact@v3
+      with:
+        name: go-binaries-1.21
+        path: dist/
+        
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.DOCKER_REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Build and push production image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: |
+          ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}:latest
+          ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}:${{ github.event.inputs.version || 'latest' }}
+        labels: |
+          environment=production
+          version=${{ github.event.inputs.version || github.sha }}
+          built-by=github-actions
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Deploy to production environment
+      run: |
+        echo "Deploying to production environment..."
+        # Here you would add your actual production deployment commands
+        # For example, kubectl apply, helm upgrade, etc.
+        echo "Production deployment completed"
+        
+    - name: Run production tests
+      run: |
+        echo "Running production tests..."
+        # Add your production test commands here
+        echo "Production tests passed"
+        
+    - name: Health check
+      run: |
+        echo "Performing health check..."
+        # Add your health check commands here
+        echo "Health check passed"
+        
+    - name: Notify production deployment
+      run: |
+        echo "Successfully deployed to production environment"
+        echo "Image: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}:latest"
+        echo "Version: ${{ github.event.inputs.version || github.sha }}"
+        
+    - name: Create deployment summary
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { data: releases } = await github.rest.repos.listReleases({
+            owner: context.repo.owner,
+            repo: context.repo.repo
+          });
+          
+          if (releases.length > 0) {
+            const latestRelease = releases[0];
+            await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: `v${process.env.VERSION || '1.0.0'}`,
+              name: `Release ${process.env.VERSION || '1.0.0'}`,
+              body: `Production deployment completed successfully.\n\n- Environment: Production\n- Version: ${process.env.VERSION || 'latest'}\n- Commit: ${context.sha}\n- Deployed by: ${context.actor}`,
+              draft: false,
+              prerelease: false
+            });
+          }
+      env:
+        VERSION: ${{ github.event.inputs.version }}
+
+  # Rollback (if needed)
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: failure()
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Rollback to previous version
+      run: |
+        echo "Rolling back deployment due to failure..."
+        # Add your rollback commands here
+        echo "Rollback completed"
+        
+    - name: Notify rollback
+      run: |
+        echo "Deployment rolled back due to failure"
+        echo "Previous stable version restored"

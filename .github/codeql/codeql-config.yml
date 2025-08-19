@@ -1,0 +1,58 @@
+name: "SciSimGo CodeQL Configuration"
+
+# This file configures the CodeQL analysis for the SciSimGo project
+# It specifies which queries to run and how to interpret the results
+
+queries:
+  # Use the default security queries for Go and Python
+  - uses: security-and-quality
+  # Add specific queries for scientific computing
+  - uses: security-and-quality
+    queries:
+      - go/unsafe-ptr
+      - go/unsafe-unsafe-pointer
+      - python/unsafe-deserialization
+      - python/unsafe-yaml-load
+      - python/unsafe-json-load
+
+# Paths to exclude from analysis
+paths-ignore:
+  - '**/vendor/**'
+  - '**/node_modules/**'
+  - '**/__pycache__/**'
+  - '**/*.test.go'
+  - '**/*_test.go'
+  - '**/test_*.py'
+  - '**/data/**'
+  - '**/logs/**'
+  - '**/dist/**'
+  - '**/build/**'
+
+# Paths to include in analysis
+paths:
+  - 'internal/**'
+  - 'cmd/**'
+  - 'notebooks/**'
+  - 'scripts/**'
+
+# Query filters for specific languages
+query-filters:
+  - include:
+      tags contain: security
+  - include:
+      tags contain: correctness
+  - exclude:
+      tags contain: experimental
+
+# Additional query suites
+query-suites:
+  - go-security-and-quality.qls
+  - python-security-and-quality.qls
+
+# Memory settings for analysis
+memory:
+  threads: 2
+  ram: 4096
+
+# Timeout settings
+timeout: 1800

@@ -36,7 +36,7 @@ type OrbitalModel struct {
 	*engine.BaseSimulation
 	
 	// Model parameters
-	GravitationalConstant float64 `json:"gravitational_constant"` // G = 6.67430e-11 m³/(kg·s²)
+	GravitationalConstant float64 `json:"gravitational_constant"` // G = 6.67430e-11 m3/(kg*s2)
 	TimeStep             float64 `json:"time_step"`              // Simulation time step in seconds
 	Enable3D             bool    `json:"enable_3d"`              // Enable 3D simulation
 	
@@ -207,7 +207,7 @@ func (om *OrbitalModel) calculateGravitationalForce(body1, body2 *CelestialBody)
 		return Vector3D{0, 0, 0}
 	}
 	
-	// Calculate force magnitude: F = G * m1 * m2 / r²
+	// Calculate force magnitude: F = G * m1 * m2 / r2
 	forceMagnitude := om.GravitationalConstant * body1.Mass * body2.Mass / (distance * distance)
 	
 	// Calculate unit vector

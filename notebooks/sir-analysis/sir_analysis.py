@@ -237,7 +237,7 @@ def machine_learning_analysis(df):
             'scaler': scaler
         }
         
-        print(f"  R² = {r2:.4f}, CV R² = {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
+        print(f"  R2 = {r2:.4f}, CV R2 = {cv_scores.mean():.4f} +/- {cv_scores.std():.4f}")
     
     return results
 
@@ -312,7 +312,7 @@ def mathematical_model_comparison(df):
     for var_name, col_name, math_vals in variables:
         mse = mean_squared_error(df[col_name], math_vals)
         r2 = r2_score(df[col_name], math_vals)
-        print(f"{var_name}: MSE = {mse:.2f}, R² = {r2:.4f}")
+        print(f"{var_name}: MSE = {mse:.2f}, R2 = {r2:.4f}")
     
     return I_math
 
@@ -354,10 +354,10 @@ def main():
         print("- R0 <= 1: Disease will not spread significantly")
     
     best_ml_score = max([ml_results[model]['cv_mean'] for model in ml_results.keys()])
-    print(f"- Best ML Model CV R²: {best_ml_score:.4f}")
+    print(f"- Best ML Model CV R2: {best_ml_score:.4f}")
     
     math_r2 = r2_score(df['infected'], I_math)
-    print(f"- Mathematical Model R²: {math_r2:.4f}")
+    print(f"- Mathematical Model R2: {math_r2:.4f}")
 
 if __name__ == "__main__":
     main()

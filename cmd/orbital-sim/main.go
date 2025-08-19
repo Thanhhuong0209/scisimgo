@@ -194,7 +194,7 @@ func createSolarSystemBodies() []*models.CelestialBody {
 // printConfiguration prints the simulation configuration
 func printConfiguration(config models.OrbitalConfig) {
 	fmt.Println("=== Orbital Simulation Configuration ===")
-	fmt.Printf("Gravitational Constant (G): %.2e m³/(kg·s²)\n", config.GravitationalConstant)
+	fmt.Printf("Gravitational Constant (G): %.2e m3/(kg*s2)\n", config.GravitationalConstant)
 	fmt.Printf("Time Step: %.1f seconds\n", config.TimeStep)
 	fmt.Printf("Enable 3D: %t\n", config.Enable3D)
 	fmt.Printf("Number of Bodies: %d\n", len(config.Bodies))

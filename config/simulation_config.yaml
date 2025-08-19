@@ -1,0 +1,263 @@
+# SciSimGo Simulation Configuration
+# This file contains default configuration values for all simulation models
+
+# Global simulation settings
+global:
+  # Default tick rate for all simulations
+  default_tick_rate: "100ms"
+  
+  # Default export interval
+  default_export_interval: "1s"
+  
+  # Default logging level
+  logging_level: "info"
+  
+  # Default output directory
+  output_directory: "data"
+  
+  # Enable/disable real-time visualization
+  enable_visualization: false
+  
+  # Performance monitoring
+  enable_performance_monitoring: true
+  performance_sampling_interval: "5s"
+
+# SIR Disease Model Configuration
+sir:
+  # Population settings
+  population_size: 10000
+  initial_infected: 100
+  
+  # Disease parameters
+  infection_rate: 0.3      # β (beta) - rate of infection
+  recovery_rate: 0.1       # γ (gamma) - rate of recovery
+  
+  # Simulation settings
+  duration: "100s"
+  tick_rate: "100ms"
+  max_iterations: 0        # 0 = unlimited
+  
+  # Stochastic behavior
+  enable_stochastic: false
+  random_seed: 42
+  
+  # Export settings
+  export_format: "csv"
+  export_columns:
+    - "timestamp"
+    - "iteration"
+    - "susceptible"
+    - "infected"
+    - "recovered"
+    - "total_population"
+    - "infection_rate"
+    - "recovery_rate"
+    - "peak_infected"
+    - "total_cases"
+
+# Predator-Prey Model Configuration
+predator_prey:
+  # Initial populations
+  initial_prey: 1000
+  initial_predator: 100
+  
+  # Growth and interaction rates
+  prey_growth_rate: 0.1        # r - intrinsic growth rate of prey
+  predation_rate: 0.01         # a - predation rate
+  predator_death_rate: 0.1     # m - mortality rate of predators
+  conversion_efficiency: 0.1   # e - efficiency of converting prey to predator biomass
+  
+  # Simulation settings
+  duration: "200s"
+  tick_rate: "100ms"
+  max_iterations: 0
+  
+  # Export settings
+  export_format: "csv"
+  export_columns:
+    - "timestamp"
+    - "iteration"
+    - "prey"
+    - "predator"
+    - "prey_growth_rate"
+    - "predation_rate"
+    - "predator_death_rate"
+    - "conversion_efficiency"
+    - "peak_prey"
+    - "peak_predator"
+    - "min_prey"
+    - "min_predator"
+    - "cycle_count"
+
+# Orbital Mechanics Configuration
+orbital:
+  # Time settings
+  time_step: 1000              # Time step in seconds
+  duration: "300s"
+  tick_rate: "1s"
+  max_iterations: 0
+  
+  # Gravitational settings
+  gravitational_constant: 6.67430e-11  # G in m3/kg/s2
+  
+  # 3D visualization
+  enable_3d: false
+  
+  # Celestial bodies
+  bodies:
+    sun:
+      name: "Sun"
+      mass: 1.989e30           # kg
+      position: [0, 0, 0]      # m
+      velocity: [0, 0, 0]      # m/s
+      radius: 6.957e8          # m
+      color: "#FFD700"
+    
+    earth:
+      name: "Earth"
+      mass: 5.972e24           # kg
+      position: [1.496e11, 0, 0]  # m (1 AU)
+      velocity: [0, 29780, 0]     # m/s
+      radius: 6.371e6          # m
+      color: "#0066CC"
+    
+    mars:
+      name: "Mars"
+      mass: 6.39e23            # kg
+      position: [2.279e11, 0, 0]  # m (1.52 AU)
+      velocity: [0, 24100, 0]     # m/s
+      radius: 3.389e6          # m
+      color: "#CC3300"
+  
+  # Export settings
+  export_format: "csv"
+  export_columns:
+    - "timestamp"
+    - "iteration"
+    - "body_name"
+    - "position_x"
+    - "position_y"
+    - "position_z"
+    - "velocity_x"
+    - "velocity_y"
+    - "velocity_z"
+    - "kinetic_energy"
+    - "potential_energy"
+    - "total_energy"
+
+# Data Analysis Configuration
+analysis:
+  # Python environment
+  python_path: "python3"
+  virtual_env: "venv"
+  
+  # Analysis settings
+  enable_statistical_analysis: true
+  enable_machine_learning: true
+  enable_visualization: true
+  
+  # Statistical analysis
+  statistics:
+    - "mean"
+    - "median"
+    - "std"
+    - "min"
+    - "max"
+    - "peak"
+    - "growth_rate"
+    - "variance"
+    - "coefficient_of_variation"
+  
+  # Machine learning models
+  ml_models:
+    - "linear_regression"
+    - "ridge_regression"
+    - "random_forest"
+    - "lstm"
+    - "arima"
+    - "svm"
+    - "kmeans"
+    - "dbscan"
+  
+  # Visualization settings
+  visualization:
+    format: "png"
+    dpi: 300
+    style: "seaborn"
+    color_palette: "viridis"
+    figure_size: [12, 8]
+    
+  # Export formats
+  export_formats:
+    - "csv"
+    - "json"
+    - "excel"
+    - "html"
+
+# Performance Configuration
+performance:
+  # Memory management
+  max_memory_usage: "2GB"
+  enable_garbage_collection: true
+  gc_interval: "1000"
+  
+  # CPU optimization
+  max_cpu_usage: 0.8
+  enable_parallel_processing: true
+  worker_threads: 4
+  
+  # I/O optimization
+  buffer_size: 8192
+  enable_async_io: true
+  
+  # Monitoring
+  enable_profiling: false
+  profiling_output: "profiles"
+  enable_metrics: true
+  metrics_interval: "10s"
+
+# Logging Configuration
+logging:
+  level: "info"
+  format: "json"
+  output: "logs"
+  max_file_size: "100MB"
+  max_files: 10
+  enable_rotation: true
+  
+  # Structured logging fields
+  fields:
+    service: "scisimgo"
+    version: "1.0.0"
+    environment: "development"
+  
+  # Log levels for different components
+  components:
+    engine: "info"
+    models: "debug"
+    export: "info"
+    analysis: "info"
+    performance: "warn"
+
+# Error Handling Configuration
+error_handling:
+  # Retry settings
+  max_retries: 3
+  retry_delay: "1s"
+  exponential_backoff: true
+  
+  # Error reporting
+  enable_error_reporting: true
+  error_reporting_endpoint: ""
+  
+  # Graceful degradation
+  enable_graceful_degradation: true
+  fallback_strategies:
+    - "use_default_values"
+    - "skip_failed_iterations"
+    - "continue_with_partial_results"
+  
+  # Validation
+  strict_validation: false
+  allow_unknown_fields: true
+  validate_data_types: true

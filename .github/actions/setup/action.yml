@@ -1,0 +1,81 @@
+name: 'Setup Development Environment'
+description: 'Setup Go and Python development environment for SciSimGo'
+
+inputs:
+  go-version:
+    description: 'Go version to use'
+    required: false
+    default: '1.21'
+  python-version:
+    description: 'Python version to use'
+    required: false
+    default: '3.11'
+  cache-go:
+    description: 'Cache Go modules'
+    required: false
+    default: 'true'
+  cache-python:
+    description: 'Cache Python packages'
+    required: false
+    default: 'true'
+  install-tools:
+    description: 'Install development tools'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ inputs.go-version }}
+        cache: ${{ inputs.cache-go }}
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: ${{ inputs.cache-python }}
+
+    - name: Install Go tools
+      if: inputs.install-tools == 'true'
+      shell: bash
+      run: |
+        echo "Installing Go development tools..."
+        go install golang.org/x/lint/golint@latest
+        go install golang.org/x/tools/cmd/goimports@latest
+        go install golang.org/x/tools/cmd/godoc@latest
+        go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+
+    - name: Install Python tools
+      if: inputs.install-tools == 'true'
+      shell: bash
+      run: |
+        echo "Installing Python development tools..."
+        python -m pip install --upgrade pip
+        pip install flake8 black isort mypy pylint pytest pytest-cov bandit safety
+        pip install pytest-benchmark memory-profiler line-profiler
+        pip install radon mccabe pip-licenses pipdeptree
+
+    - name: Install project dependencies
+      shell: bash
+      run: |
+        echo "Installing project dependencies..."
+        if [ -f "go.mod" ]; then
+          go mod download
+        fi
+        if [ -f "requirements.txt" ]; then
+          pip install -r requirements.txt
+        fi
+
+    - name: Display versions
+      shell: bash
+      run: |
+        echo "Environment setup complete:"
+        echo "Go version: $(go version)"
+        echo "Python version: $(python --version)"
+        echo "Go modules: $(go list -m all | wc -l) packages"
+        echo "Python packages: $(pip list | wc -l) packages"

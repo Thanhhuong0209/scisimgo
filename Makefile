@@ -47,8 +47,27 @@ build:
 # Run Go tests
 test:
 	@echo "Running Go tests..."
-	go test ./...
+	go test -v ./...
 	@echo "Tests completed!"
+
+# Run tests with coverage
+test-coverage:
+	@echo "Running Go tests with coverage..."
+	go test -v -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
+
+# Run tests with race detection
+test-race:
+	@echo "Running Go tests with race detection..."
+	go test -race -v ./...
+	@echo "Race detection tests completed!"
+
+# Run tests with benchmarks
+test-bench:
+	@echo "Running Go tests with benchmarks..."
+	go test -bench=. -benchmem ./...
+	@echo "Benchmark tests completed!"
 
 # Run all simulations
 run:

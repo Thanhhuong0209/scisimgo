@@ -1,0 +1,120 @@
+name: 'Cache Management'
+description: 'Optimized caching strategies for Go, Python, and Docker in SciSimGo workflows'
+
+inputs:
+  cache-go:
+    description: 'Cache Go modules'
+    required: false
+    default: 'true'
+  cache-python:
+    description: 'Cache Python packages'
+    required: false
+    default: 'true'
+  cache-docker:
+    description: 'Cache Docker layers'
+    required: false
+    default: 'true'
+  cache-node:
+    description: 'Cache Node.js packages (if applicable)'
+    required: false
+    default: 'false'
+  cache-key:
+    description: 'Custom cache key prefix'
+    required: false
+    default: 'scisimgo'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Cache Go modules
+      if: inputs.cache-go == 'true'
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ inputs.cache-key }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ inputs.cache-key }}-go-
+
+    - name: Cache Python packages
+      if: inputs.cache-python == 'true'
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pip
+          ~/.local/lib/python*/site-packages
+        key: ${{ inputs.cache-key }}-python-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ inputs.cache-key }}-python-
+
+    - name: Cache Docker layers
+      if: inputs.cache-docker == 'true'
+      uses: actions/cache@v3
+      with:
+        path: |
+          /tmp/.buildx-cache
+        key: ${{ inputs.cache-key }}-docker-${{ hashFiles('**/Dockerfile') }}
+        restore-keys: |
+          ${{ inputs.cache-key }}-docker-
+
+    - name: Cache Node.js packages
+      if: inputs.cache-node == 'true'
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.npm
+          node_modules
+          */*/node_modules
+        key: ${{ inputs.cache-key }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ inputs.cache-key }}-node-
+
+    - name: Cache test results
+      uses: actions/cache@v3
+      with:
+        path: |
+          coverage/
+          test-results/
+          .pytest_cache/
+        key: ${{ inputs.cache-key }}-tests-${{ hashFiles('**/*.go', '**/*.py') }}
+        restore-keys: |
+          ${{ inputs.cache-key }}-tests-
+
+    - name: Cache build artifacts
+      uses: actions/cache@v3
+      with:
+        path: |
+          dist/
+          build/
+          bin/
+        key: ${{ inputs.cache-key }}-build-${{ hashFiles('**/*.go', '**/*.py') }}
+        restore-keys: |
+          ${{ inputs.cache-key }}-build-
+
+    - name: Display cache status
+      shell: bash
+      run: |
+        echo "Cache configuration:"
+        echo "- Go modules: ${{ inputs.cache-go }}"
+        echo "- Python packages: ${{ inputs.cache-python }}"
+        echo "- Docker layers: ${{ inputs.cache-docker }}"
+        echo "- Node.js packages: ${{ inputs.cache-node }}"
+        echo "- Cache key prefix: ${{ inputs.cache-key }}"
+        
+        echo ""
+        echo "Cache paths:"
+        if [ "${{ inputs.cache-go }}" = "true" ]; then
+          echo "- Go: ~/.cache/go-build, ~/go/pkg/mod"
+        fi
+        if [ "${{ inputs.cache-python }}" = "true" ]; then
+          echo "- Python: ~/.cache/pip, ~/.local/lib/python*/site-packages"
+        fi
+        if [ "${{ inputs.cache-docker }}" = "true" ]; then
+          echo "- Docker: /tmp/.buildx-cache"
+        fi
+        if [ "${{ inputs.cache-node }}" = "true" ]; then
+          echo "- Node.js: ~/.npm, node_modules"
+        fi
+        echo "- Tests: coverage/, test-results/, .pytest_cache/"
+        echo "- Build: dist/, build/, bin/"

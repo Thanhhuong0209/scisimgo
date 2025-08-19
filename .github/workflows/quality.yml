@@ -1,0 +1,328 @@
+name: Quality Assurance
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run every day at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      run_all_tests:
+        description: 'Run all tests including slow ones'
+        required: false
+        default: false
+        type: boolean
+      check_coverage:
+        description: 'Check test coverage'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  GO_VERSION: '1.21'
+  PYTHON_VERSION: '3.11'
+  COVERAGE_THRESHOLD: '80'
+
+jobs:
+  # Go Quality Checks
+  go-quality:
+    name: Go Quality
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [1.20, 1.21, 1.22]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go ${{ matrix.go-version }}
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ matrix.go-version }}
+        cache: true
+        
+    - name: Install Go tools
+      run: |
+        go install golang.org/x/lint/golint@latest
+        go install golang.org/x/tools/cmd/goimports@latest
+        go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+        
+    - name: Run golint
+      run: |
+        echo "Running golint..."
+        golint -set_exit_status ./...
+        
+    - name: Check formatting
+      run: |
+        echo "Checking Go formatting..."
+        if [ "$(goimports -d . | wc -l)" -gt 0 ]; then
+          echo "Code is not properly formatted. Run 'goimports -w .'"
+          goimports -d .
+          exit 1
+        fi
+        
+    - name: Check cyclomatic complexity
+      run: |
+        echo "Checking cyclomatic complexity..."
+        gocyclo -over 15 ./...
+        
+    - name: Run golangci-lint
+      run: |
+        echo "Running golangci-lint..."
+        golangci-lint run --timeout=5m
+        
+    - name: Run tests
+      run: |
+        echo "Running Go tests..."
+        go test -v -race -coverprofile=coverage-${{ matrix.go-version }}.out ./...
+        
+    - name: Check test coverage
+      if: github.event.inputs.check_coverage == 'true'
+      run: |
+        echo "Checking test coverage..."
+        go tool cover -func=coverage-${{ matrix.go-version }}.out | grep total | awk '{print $3}' | sed 's/%//' > coverage.txt
+        COVERAGE=$(cat coverage.txt)
+        if (( $(echo "$COVERAGE < $COVERAGE_THRESHOLD" | bc -l) )); then
+          echo "Test coverage $COVERAGE% is below threshold $COVERAGE_THRESHOLD%"
+          exit 1
+        fi
+        echo "Test coverage: $COVERAGE%"
+        
+    - name: Upload coverage
+      uses: actions/upload-artifact@v3
+      with:
+        name: go-coverage-${{ matrix.go-version }}
+        path: coverage-${{ matrix.go-version }}.out
+        retention-days: 30
+
+  # Python Quality Checks
+  python-quality:
+    name: Python Quality
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        
+    - name: Install Python tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install flake8 black isort mypy pylint pytest pytest-cov bandit safety
+        
+    - name: Check code formatting with black
+      run: |
+        echo "Checking code formatting with black..."
+        black --check --diff notebooks/ scripts/
+        
+    - name: Check import sorting with isort
+      run: |
+        echo "Checking import sorting with isort..."
+        isort --check-only --diff notebooks/ scripts/
+        
+    - name: Run flake8 linting
+      run: |
+        echo "Running flake8..."
+        flake8 notebooks/ scripts/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 notebooks/ scripts/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        
+    - name: Run pylint
+      run: |
+        echo "Running pylint..."
+        pylint notebooks/ scripts/ --disable=C0114,C0116 --fail-under=8.0
+        
+    - name: Run mypy type checking
+      run: |
+        echo "Running mypy type checking..."
+        mypy notebooks/ scripts/ --ignore-missing-imports --disallow-untyped-defs
+        
+    - name: Run security checks with bandit
+      run: |
+        echo "Running security checks with bandit..."
+        bandit -r notebooks/ scripts/ -f json -o bandit-report.json || true
+        
+    - name: Check dependencies with safety
+      run: |
+        echo "Checking dependencies with safety..."
+        safety check -r requirements.txt --json --output safety-report.json || true
+        
+    - name: Run tests
+      run: |
+        echo "Running Python tests..."
+        pytest notebooks/ scripts/ --cov=notebooks --cov=scripts --cov-report=xml --cov-report=html --cov-report=term
+        
+    - name: Check test coverage
+      if: github.event.inputs.check_coverage == 'true'
+      run: |
+        echo "Checking test coverage..."
+        COVERAGE=$(pytest --cov=notebooks --cov=scripts --cov-report=term-missing | grep TOTAL | awk '{print $4}' | sed 's/%//')
+        if (( $(echo "$COVERAGE < $COVERAGE_THRESHOLD" | bc -l) )); then
+          echo "Test coverage $COVERAGE% is below threshold $COVERAGE_THRESHOLD%"
+          exit 1
+        fi
+        echo "Test coverage: $COVERAGE%"
+        
+    - name: Upload reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: python-reports-${{ matrix.python-version }}
+        path: |
+          bandit-report.json
+          safety-report.json
+          coverage.xml
+          htmlcov/
+        retention-days: 30
+
+  # Performance Testing
+  performance:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    if: github.event.inputs.run_all_tests == 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    - name: Run Go benchmarks
+      run: |
+        echo "Running Go benchmarks..."
+        go test -bench=. -benchmem -benchtime=10s ./... > go-benchmarks.txt
+        
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install Python performance tools
+      run: |
+        pip install pytest-benchmark memory-profiler line-profiler
+        
+    - name: Run Python benchmarks
+      run: |
+        echo "Running Python benchmarks..."
+        pytest notebooks/ scripts/ --benchmark-only --benchmark-sort=name > python-benchmarks.txt
+        
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v3
+      with:
+        name: benchmark-results
+        path: |
+          go-benchmarks.txt
+          python-benchmarks.txt
+        retention-days: 90
+
+  # Code Metrics
+  code-metrics:
+    name: Code Metrics
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install metrics tools
+      run: |
+        pip install radon mccabe
+        
+    - name: Calculate code metrics
+      run: |
+        echo "Calculating code metrics..."
+        
+        # Count lines of code
+        echo "## Code Statistics" >> $GITHUB_STEP_SUMMARY
+        echo "Date: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Go files
+        GO_FILES=$(find . -name "*.go" | wc -l)
+        GO_LINES=$(find . -name "*.go" -exec wc -l {} + | tail -1 | awk '{print $1}')
+        echo "- Go files: $GO_FILES" >> $GITHUB_STEP_SUMMARY
+        echo "- Go lines: $GO_LINES" >> $GITHUB_STEP_SUMMARY
+        
+        # Python files
+        PYTHON_FILES=$(find . -name "*.py" | wc -l)
+        PYTHON_LINES=$(find . -name "*.py" -exec wc -l {} + | tail -1 | awk '{print $1}')
+        echo "- Python files: $PYTHON_FILES" >> $GITHUB_STEP_SUMMARY
+        echo "- Python lines: $PYTHON_LINES" >> $GITHUB_STEP_SUMMARY
+        
+        # Total
+        TOTAL_FILES=$((GO_FILES + PYTHON_FILES))
+        TOTAL_LINES=$((GO_LINES + PYTHON_LINES))
+        echo "- Total files: $TOTAL_FILES" >> $GITHUB_STEP_SUMMARY
+        echo "- Total lines: $TOTAL_LINES" >> $GITHUB_STEP_SUMMARY
+        
+        # Calculate complexity metrics
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Complexity Metrics" >> $GITHUB_STEP_SUMMARY
+        
+        # Python complexity
+        if [ $PYTHON_FILES -gt 0 ]; then
+          echo "### Python Complexity" >> $GITHUB_STEP_SUMMARY
+          radon cc notebooks/ scripts/ -a >> $GITHUB_STEP_SUMMARY || echo "No Python files to analyze"
+        fi
+        
+        # McCabe complexity
+        if [ $PYTHON_FILES -gt 0 ]; then
+          echo "### McCabe Complexity" >> $GITHUB_STEP_SUMMARY
+          mccabe notebooks/ scripts/ >> $GITHUB_STEP_SUMMARY || echo "No Python files to analyze"
+        fi
+
+  # Quality Summary
+  quality-summary:
+    name: Quality Summary
+    runs-on: ubuntu-latest
+    needs: [go-quality, python-quality, performance, code-metrics]
+    if: always()
+    
+    steps:
+    - name: Generate quality summary
+      run: |
+        echo "# Quality Assurance Summary" >> $GITHUB_STEP_SUMMARY
+        echo "Date: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Job Results" >> $GITHUB_STEP_SUMMARY
+        echo "- Go Quality: ${{ needs.go-quality.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Python Quality: ${{ needs.python-quality.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Performance: ${{ needs.performance.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Code Metrics: ${{ needs.code-metrics.result }}" >> $GITHUB_STEP_SUMMARY
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Quality Status" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ needs.go-quality.result }}" = "success" ] && [ "${{ needs.python-quality.result }}" = "success" ]; then
+          echo "All quality checks passed!" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "Some quality checks failed. Please review the logs above." >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ "${{ needs.performance.result }}" = "success" ]; then
+          echo "Performance tests completed successfully" >> $GITHUB_STEP_SUMMARY
+        elif [ "${{ needs.performance.result }}" = "skipped" ]; then
+          echo "Performance tests skipped (not requested)" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "Performance tests failed" >> $GITHUB_STEP_SUMMARY
+        fi

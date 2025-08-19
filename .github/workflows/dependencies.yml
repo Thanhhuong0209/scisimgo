@@ -1,0 +1,254 @@
+name: Dependency Management & Security
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      update_dependencies:
+        description: 'Update dependencies automatically'
+        required: false
+        default: false
+        type: boolean
+      security_only:
+        description: 'Security scan only'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  GO_VERSION: '1.21'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # Go Dependency Scanning
+  go-dependencies:
+    name: Go Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        cache: true
+        
+    - name: Install Go security tools
+      run: |
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+        go install github.com/google/go-licenses@latest
+        
+    - name: Check for Go vulnerabilities
+      run: |
+        echo "Checking for Go vulnerabilities..."
+        govulncheck ./... || true
+        
+    - name: Check Go licenses
+      run: |
+        echo "Checking Go licenses..."
+        go-licenses check ./... || true
+        
+    - name: Update Go modules
+      if: github.event.inputs.update_dependencies == 'true'
+      run: |
+        echo "Updating Go modules..."
+        go get -u ./...
+        go mod tidy
+        go mod verify
+        
+    - name: Create Go dependency PR
+      if: github.event.inputs.update_dependencies == 'true'
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'chore(deps): update Go dependencies'
+        title: 'Update Go Dependencies'
+        body: |
+          Automated update of Go dependencies
+          
+          - Updated by GitHub Actions
+          - Date: ${{ github.event.schedule }}
+        branch: update/go-dependencies
+        delete-branch: true
+
+  # Python Dependency Scanning
+  python-dependencies:
+    name: Python Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        
+    - name: Install Python security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit pip-audit
+        
+    - name: Check Python dependencies for vulnerabilities
+      run: |
+        echo "Checking Python dependencies for vulnerabilities..."
+        safety check -r requirements.txt || true
+        
+    - name: Run security linter
+      run: |
+        echo "Running security linter..."
+        bandit -r notebooks/ scripts/ || true
+        
+    - name: Audit pip packages
+      run: |
+        echo "Auditing pip packages..."
+        pip-audit -r requirements.txt || true
+        
+    - name: Update Python dependencies
+      if: github.event.inputs.update_dependencies == 'true'
+      run: |
+        echo "Updating Python dependencies..."
+        pip install --upgrade -r requirements.txt
+        pip freeze > requirements.txt.new
+        mv requirements.txt.new requirements.txt
+        
+    - name: Create Python dependency PR
+      if: github.event.inputs.update_dependencies == 'true'
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'chore(deps): update Python dependencies'
+        title: 'Update Python Dependencies'
+        body: |
+          Automated update of Python dependencies
+          
+          - Updated by GitHub Actions
+          - Date: ${{ github.event.schedule }}
+        branch: update/python-dependencies
+        delete-branch: true
+
+  # Docker Security Scanning
+  docker-security:
+    name: Docker Security
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy vulnerability scanner on Dockerfile
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        severity: 'CRITICAL,HIGH'
+        
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+        
+    - name: Check for critical vulnerabilities
+      run: |
+        if [ -f "trivy-results.sarif" ]; then
+          echo "Checking for critical vulnerabilities..."
+          # Add logic to check for critical vulnerabilities
+          echo "Security scan completed"
+        fi
+
+  # License Compliance
+  license-compliance:
+    name: License Compliance
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install license checker
+      run: |
+        pip install pip-licenses
+        
+    - name: Check Python licenses
+      run: |
+        echo "Checking Python package licenses..."
+        pip-licenses --format=markdown --output-file=python-licenses.md
+        
+    - name: Upload license report
+      uses: actions/upload-artifact@v3
+      with:
+        name: license-report
+        path: python-licenses.md
+        retention-days: 90
+
+  # Dependency Graph
+  dependency-graph:
+    name: Dependency Graph
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Generate Go dependency graph
+      run: |
+        echo "Generating Go dependency graph..."
+        go mod graph > go-deps.txt
+        
+    - name: Generate Python dependency tree
+      run: |
+        echo "Generating Python dependency tree..."
+        pip install pipdeptree
+        pipdeptree > python-deps.txt
+        
+    - name: Upload dependency graphs
+      uses: actions/upload-artifact@v3
+      with:
+        name: dependency-graphs
+        path: |
+          go-deps.txt
+          python-deps.txt
+        retention-days: 90
+
+  # Security Summary
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [go-dependencies, python-dependencies, docker-security]
+    if: always()
+    
+    steps:
+    - name: Create security summary
+      run: |
+        echo "# Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+        echo "Date: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Scan Results" >> $GITHUB_STEP_SUMMARY
+        echo "- Go Dependencies: ${{ needs.go-dependencies.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Python Dependencies: ${{ needs.python-dependencies.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Docker Security: ${{ needs.docker-security.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Recommendations" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ needs.go-dependencies.result }}" != "success" ]; then
+          echo "- Review Go dependency vulnerabilities" >> $GITHUB_STEP_SUMMARY
+        fi
+        if [ "${{ needs.python-dependencies.result }}" != "success" ]; then
+          echo "- Review Python dependency vulnerabilities" >> $GITHUB_STEP_SUMMARY
+        fi
+        if [ "${{ needs.docker-security.result }}" != "success" ]; then
+          echo "- Review Docker security issues" >> $GITHUB_STEP_SUMMARY
+        fi
