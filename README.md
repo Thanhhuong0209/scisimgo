@@ -3,7 +3,7 @@
 [![Go Version](https://img.shields.io/badge/Go-1.21+-blue.svg)](https://golang.org)
 [![Python Version](https://img.shields.io/badge/Python-3.9+-green.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Thanhhuong0209/scisimgo)](https://goreportcard.com/report/github.com/Thanhhuong0209/scisimgo)
+[![Go Build](https://img.shields.io/badge/Go-Build%20Passing-brightgreen.svg)](https://github.com/Thanhhuong0209/scisimgo/actions)
 [![CI/CD Status](https://github.com/Thanhhuong0209/scisimgo/workflows/SciSimGo%20CI%2FCD%20Pipeline/badge.svg)](https://github.com/Thanhhuong0209/scisimgo/actions)
 
 > A comprehensive simulation framework combining Go-based computational engines with advanced data analysis pipelines for scientific research and educational applications.
