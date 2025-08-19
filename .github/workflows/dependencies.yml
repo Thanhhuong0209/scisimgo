@@ -36,15 +36,15 @@ jobs:
           
           # Check for obvious issues in go.mod
           if grep -q "replace" go.mod; then
-            echo "⚠️  Found replace directives in go.mod"
+            echo "Found replace directives in go.mod"
           else
-            echo "✅ No replace directives found"
+            echo "No replace directives found"
           fi
           
           if grep -q "exclude" go.mod; then
-            echo "⚠️  Found exclude directives in go.mod"
+            echo "Found exclude directives in go.mod"
           else
-            echo "✅ No exclude directives found"
+            echo "No exclude directives found"
           fi
         else
           echo "No go.mod file found"
@@ -58,15 +58,15 @@ jobs:
           
           # Check for obvious issues
           if grep -q "==" requirements.txt; then
-            echo "✅ Found version pinning (==)"
+            echo "Found version pinning (==)"
           else
-            echo "⚠️  No version pinning found"
+            echo "No version pinning found"
           fi
           
           if grep -q ">=" requirements.txt; then
-            echo "⚠️  Found loose version constraints (>="
+            echo "Found loose version constraints (>="
           else
-            echo "✅ No loose version constraints found"
+            echo "No loose version constraints found"
           fi
         else
           echo "No requirements.txt file found"
@@ -88,9 +88,9 @@ jobs:
         echo "Potential hardcoded secrets found: $SECRET_COUNT"
         
         if [ "$SECRET_COUNT" -eq 0 ]; then
-          echo "✅ No obvious hardcoded secrets found"
+          echo "No obvious hardcoded secrets found"
         else
-          echo "⚠️  Found potential hardcoded secrets"
+          echo "Found potential hardcoded secrets"
           grep -r "password\|secret\|key\|token\|api_key\|private_key" . --exclude-dir=.git --exclude=*.md | grep -v "example\|test\|TODO\|password123\|secret123" | head -3
         fi
         
@@ -99,9 +99,9 @@ jobs:
         echo "Sensitive files found: $SENSITIVE_FILES"
         
         if [ "$SENSITIVE_FILES" -eq 0 ]; then
-          echo "✅ No sensitive files found"
+          echo "No sensitive files found"
         else
-          echo "⚠️  Found potentially sensitive files"
+          echo "Found potentially sensitive files"
           find . -name "*.key" -o -name "*.pem" -o -name "*.p12" -o -name "*.pfx" -o -name ".env*" -o -name "config.local.*"
         fi
         
@@ -110,9 +110,9 @@ jobs:
         echo "Executable files found: $EXEC_FILES"
         
         if [ "$EXEC_FILES" -eq 0 ]; then
-          echo "✅ No unexpected executable files found"
+          echo "No unexpected executable files found"
         else
-          echo "⚠️  Found executable files"
+          echo "Found executable files"
           find . -type f -executable | grep -v ".git" | head -5
         fi
 
@@ -130,7 +130,7 @@ jobs:
         # Check for common license files
         for license_file in LICENSE LICENSE.txt LICENSE.md COPYING; do
           if [ -f "$license_file" ]; then
-            echo "✅ Found license file: $license_file"
+            echo "Found license file: $license_file"
             echo "   First few lines:"
             head -5 "$license_file"
           fi
@@ -139,18 +139,18 @@ jobs:
         # Check for license in README
         if [ -f "README.md" ]; then
           if grep -i "license\|licence" README.md | head -3; then
-            echo "✅ License information found in README"
+            echo "License information found in README"
           else
-            echo "⚠️  No license information found in README"
+            echo "No license information found in README"
           fi
         fi
         
         # Check for license in go.mod
         if [ -f "go.mod" ]; then
           if grep -i "license" go.mod; then
-            echo "✅ License information found in go.mod"
+            echo "License information found in go.mod"
           else
-            echo "⚠️  No license information found in go.mod"
+            echo "No license information found in go.mod"
           fi
         fi
 
@@ -171,9 +171,9 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           
           if [ "${{ needs.dependency-check.result }}" = "success" ] && [ "${{ needs.security-basic.result }}" = "success" ]; then
-            echo "✅ Basic dependency checks passed!" >> $GITHUB_STEP_SUMMARY
+            echo "Basic dependency checks passed!" >> $GITHUB_STEP_SUMMARY
           else
-            echo "⚠️  Some dependency checks failed. Please review the logs above." >> $GITHUB_STEP_SUMMARY
+            echo "Some dependency checks failed. Please review the logs above." >> $GITHUB_STEP_SUMMARY
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY

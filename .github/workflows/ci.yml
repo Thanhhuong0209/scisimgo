@@ -232,9 +232,9 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           
           if [ "${{ needs.code-validation.result }}" = "success" ] && [ "${{ needs.documentation.result }}" = "success" ]; then
-            echo "✅ Basic validation passed!" >> $GITHUB_STEP_SUMMARY
+            echo "Basic validation passed!" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ Some validation checks failed" >> $GITHUB_STEP_SUMMARY
+            echo "Some validation checks failed" >> $GITHUB_STEP_SUMMARY
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY

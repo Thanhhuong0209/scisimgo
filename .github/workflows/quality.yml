@@ -34,19 +34,19 @@ jobs:
         # Check for required directories
         for dir in cmd internal notebooks scripts; do
           if [ -d "$dir" ]; then
-            echo "✅ $dir/ directory found"
+            echo "$dir/ directory found"
             echo "   Contents: $(ls -1 $dir | wc -l) files"
           else
-            echo "❌ $dir/ directory missing"
+            echo "$dir/ directory missing"
           fi
         done
         
         # Check for required files
         for file in README.md go.mod requirements.txt; do
           if [ -f "$file" ]; then
-            echo "✅ $file found"
+            echo "$file found"
           else
-            echo "❌ $file missing"
+            echo "$file missing"
           fi
         done
         
@@ -70,9 +70,9 @@ jobs:
         
         # Check test coverage
         if [ "$TEST_FILES" -gt 0 ]; then
-          echo "✅ Test files present"
+          echo "Test files present"
         else
-          echo "⚠️  No test files found"
+          echo "No test files found"
         fi
         
     - name: Check documentation quality
@@ -85,18 +85,18 @@ jobs:
           echo "README.md: $README_LINES lines"
           
           if [ "$README_LINES" -ge 100 ]; then
-            echo "✅ README.md is comprehensive"
+            echo "README.md is comprehensive"
           elif [ "$README_LINES" -ge 50 ]; then
-            echo "⚠️  README.md could be more detailed"
+            echo "README.md could be more detailed"
           else
-            echo "❌ README.md is too short"
+            echo "README.md is too short"
           fi
           
           # Check for key sections
           if grep -q "## " README.md; then
-            echo "✅ README.md has proper section headers"
+            echo "README.md has proper section headers"
           else
-            echo "⚠️  README.md missing section headers"
+            echo "README.md missing section headers"
           fi
         fi
         
@@ -125,18 +125,18 @@ jobs:
           
           # Check for common Go patterns
           if find . -name "*.go" | xargs grep -l "import (" | head -5; then
-            echo "✅ Go files have proper import statements"
+            echo "Go files have proper import statements"
           fi
           
           if find . -name "*.go" | xargs grep -l "func\|type\|var\|const" | head -5; then
-            echo "✅ Go files have basic syntax elements"
+            echo "Go files have basic syntax elements"
           fi
           
           # Check for obvious formatting issues
           if find . -name "*.go" | xargs grep -l "  " | head -3; then
-            echo "⚠️  Some Go files may have inconsistent indentation"
+            echo "Some Go files may have inconsistent indentation"
           else
-            echo "✅ Go files appear to have consistent formatting"
+            echo "Go files appear to have consistent formatting"
           fi
         else
           echo "No Go module found, skipping Go style checks"
@@ -149,14 +149,14 @@ jobs:
           
           # Check for common Python patterns
           if find . -name "*.py" | xargs grep -l "import\|def\|class" | head -5; then
-            echo "✅ Python files have basic syntax elements"
+            echo "Python files have basic syntax elements"
           fi
           
           # Check for obvious formatting issues
           if find . -name "*.py" | xargs grep -l "  " | head -3; then
-            echo "⚠️  Some Python files may have inconsistent indentation"
+            echo "Some Python files may have inconsistent indentation"
           else
-            echo "✅ Python files appear to have consistent formatting"
+            echo "Python files appear to have consistent formatting"
           fi
         else
           echo "No Python requirements found, skipping Python style checks"
@@ -178,9 +178,9 @@ jobs:
         echo "Sensitive files found: $SENSITIVE_FILES"
         
         if [ "$SENSITIVE_FILES" -eq 0 ]; then
-          echo "✅ No sensitive files found"
+          echo "No sensitive files found"
         else
-          echo "⚠️  Found potentially sensitive files"
+          echo "Found potentially sensitive files"
           find . -name "*.key" -o -name "*.pem" -o -name "*.p12" -o -name "*.pfx" -o -name ".env*"
         fi
         
@@ -189,9 +189,9 @@ jobs:
         echo "Potential hardcoded secrets found: $SECRET_PATTERNS"
         
         if [ "$SECRET_PATTERNS" -eq 0 ]; then
-          echo "✅ No obvious hardcoded secrets found"
+          echo "No obvious hardcoded secrets found"
         else
-          echo "⚠️  Found potential hardcoded secrets"
+          echo "Found potential hardcoded secrets"
           grep -r "password\|secret\|key\|token" . --exclude-dir=.git --exclude=*.md | grep -v "example\|test\|TODO" | head -3
         fi
 
@@ -212,9 +212,9 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           
           if [ "${{ needs.basic-quality.result }}" = "success" ] && [ "${{ needs.code-style.result }}" = "success" ]; then
-            echo "✅ Basic quality checks passed!" >> $GITHUB_STEP_SUMMARY
+            echo "Basic quality checks passed!" >> $GITHUB_STEP_SUMMARY
           else
-            echo "⚠️  Some quality checks failed. Please review the logs above." >> $GITHUB_STEP_SUMMARY
+            echo "Some quality checks failed. Please review the logs above." >> $GITHUB_STEP_SUMMARY
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY
