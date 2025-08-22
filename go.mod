@@ -1,6 +1,6 @@
 module github.com/scisimgo
 
-go 1.21
+go 1.25
 
 require (
 	github.com/ebiten/ebiten/v2 v2.6.3

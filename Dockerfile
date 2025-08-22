@@ -1,5 +1,5 @@
 # Multi-stage build for SciSimGo
-FROM golang:1.21-alpine AS go-builder
+FROM golang:1.25-alpine AS go-builder
 
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates tzdata
@@ -22,7 +22,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o predator-prey ./c
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o orbital-sim ./cmd/orbital-sim
 
 # Python stage for data analysis
-FROM python:3.11-slim AS python-builder
+FROM python:3.13-slim AS python-builder
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -56,7 +56,7 @@ COPY --from=go-builder /app/predator-prey /app/predator-prey
 COPY --from=go-builder /app/orbital-sim /app/orbital-sim
 
 # Copy Python environment from python-builder stage
-COPY --from=python-builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=python-builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 COPY --from=python-builder /usr/local/bin /usr/local/bin
 
 # Copy source code and scripts
