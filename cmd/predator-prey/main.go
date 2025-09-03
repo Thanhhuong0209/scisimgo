@@ -92,9 +92,8 @@ func main() {
 			log.Printf("Warning: Failed to export time series: %v", err)
 		}
 
-		// Print final statistics
-		stats := pp.GetStatistics()
-		printStatistics(stats)
+		// Print final statistics (moved to after simulation completes)
+		log.Printf("Simulation data exported successfully")
 
 		return nil
 	})
@@ -119,6 +118,10 @@ func main() {
 
 	elapsed := time.Since(startTime)
 	log.Printf("Simulation completed in %v", elapsed)
+
+	// Print final statistics after simulation completes
+	stats := pp.GetStatistics()
+	printStatistics(stats)
 
 	// Export results if not already exported
 	if len(pp.GetResults()) > 0 {

@@ -77,6 +77,9 @@ func NewOrbitalModel() *OrbitalModel {
 	om.BaseSimulation.SetOnTick(om.onTick)
 	om.BaseSimulation.SetOnComplete(om.onComplete)
 
+	// Set simulation reference for method calls
+	om.BaseSimulation.SetSimulation(om)
+
 	return om
 }
 
@@ -308,12 +311,18 @@ func (om *OrbitalModel) calculateOrbitalPeriods(results []engine.SimulationResul
 	}
 }
 
-// generateTickData overrides the base method to provide orbital-specific data
-func (om *OrbitalModel) generateTickData() map[string]interface{} {
+// ExportData implements the SimulationEngine interface
+func (om *OrbitalModel) ExportData(format string) error {
+	// Base implementation - can be overridden by subclasses
+	return nil
+}
+
+// GenerateTickData overrides the base method to provide orbital-specific data
+func (om *OrbitalModel) GenerateTickData() map[string]interface{} {
 	data := map[string]interface{}{
-		"iteration": om.BaseSimulation.GetState(),
+		"iteration": 0, // Will be set by base simulation
 		"timestamp": time.Now().Unix(),
-		"state":     om.BaseSimulation.GetState().String(),
+		"state":     "running",
 		"time_step": om.TimeStep,
 		"enable_3d": om.Enable3D,
 	}

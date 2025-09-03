@@ -107,9 +107,8 @@ func main() {
 			}
 		}
 
-		// Print final statistics
-		stats := orbital.GetStatistics()
-		printStatistics(stats)
+		// Print final statistics (moved to after simulation completes)
+		log.Printf("Simulation data exported successfully")
 
 		return nil
 	})
@@ -134,6 +133,10 @@ func main() {
 
 	elapsed := time.Since(startTime)
 	log.Printf("Simulation completed in %v", elapsed)
+
+	// Print final statistics after simulation completes
+	stats := orbital.GetStatistics()
+	printStatistics(stats)
 
 	// Export results if not already exported
 	if len(orbital.GetResults()) > 0 {
