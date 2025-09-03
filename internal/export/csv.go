@@ -37,13 +37,13 @@ func (ce *CSVExporter) ExportResults(results []engine.SimulationResult, filename
 	}
 
 	// Create full file path
-	filepath := filepath.Join(ce.outputDir, filename)
-	if filepath.Ext(filepath) != ".csv" {
-		filepath += ".csv"
+	fullPath := filepath.Join(ce.outputDir, filename)
+	if filepath.Ext(fullPath) != ".csv" {
+		fullPath += ".csv"
 	}
 
 	// Create CSV file
-	file, err := os.Create(filepath)
+	file, err := os.Create(fullPath)
 	if err != nil {
 		return fmt.Errorf("failed to create CSV file: %w", err)
 	}
@@ -162,13 +162,13 @@ func (ce *CSVExporter) ExportWithCustomHeaders(
 	}
 
 	// Create full file path
-	filepath := filepath.Join(ce.outputDir, filename)
-	if filepath.Ext(filepath) != ".csv" {
-		filepath += ".csv"
+	fullPath := filepath.Join(ce.outputDir, filename)
+	if filepath.Ext(fullPath) != ".csv" {
+		fullPath += ".csv"
 	}
 
 	// Create CSV file
-	file, err := os.Create(filepath)
+	file, err := os.Create(fullPath)
 	if err != nil {
 		return fmt.Errorf("failed to create CSV file: %w", err)
 	}
@@ -212,10 +212,10 @@ func (ce *CSVExporter) ExportTimeSeries(
 	// Create data mapper
 	dataMapper := func(result engine.SimulationResult) []string {
 		row := make([]string, len(headers))
-		
+
 		// Time column
 		row[0] = result.Timestamp.Format(time.RFC3339)
-		
+
 		// Value columns
 		for i, col := range valueColumns {
 			if value, exists := result.Data[col]; exists {
@@ -224,7 +224,7 @@ func (ce *CSVExporter) ExportTimeSeries(
 				row[i+1] = ""
 			}
 		}
-		
+
 		return row
 	}
 

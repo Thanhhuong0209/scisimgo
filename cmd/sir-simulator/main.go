@@ -17,16 +17,16 @@ import (
 func main() {
 	// Parse command line flags
 	var (
-		populationSize = flag.Int("population", 10000, "Total population size")
+		populationSize  = flag.Int("population", 10000, "Total population size")
 		initialInfected = flag.Int("initial-infected", 100, "Initial number of infected individuals")
-		infectionRate = flag.Float64("infection-rate", 0.3, "Infection rate (β)")
-		recoveryRate = flag.Float64("recovery-rate", 0.1, "Recovery rate (γ)")
-		duration = flag.Duration("duration", 100*time.Second, "Simulation duration")
-		tickRate = flag.Duration("tick-rate", 100*time.Millisecond, "Simulation tick rate")
-		maxIterations = flag.Int("max-iterations", 0, "Maximum number of iterations (0 = unlimited)")
-		outputDir = flag.String("output", "data", "Output directory for CSV files")
-		enableLogging = flag.Bool("logging", true, "Enable detailed logging")
-		exportInterval = flag.Duration("export-interval", 1*time.Second, "Data export interval")
+		infectionRate   = flag.Float64("infection-rate", 0.3, "Infection rate (β)")
+		recoveryRate    = flag.Float64("recovery-rate", 0.1, "Recovery rate (γ)")
+		duration        = flag.Duration("duration", 100*time.Second, "Simulation duration")
+		tickRate        = flag.Duration("tick-rate", 100*time.Millisecond, "Simulation tick rate")
+		maxIterations   = flag.Int("max-iterations", 0, "Maximum number of iterations (0 = unlimited)")
+		outputDir       = flag.String("output", "data", "Output directory for CSV files")
+		enableLogging   = flag.Bool("logging", true, "Enable detailed logging")
+		exportInterval  = flag.Duration("export-interval", 1*time.Second, "Data export interval")
 	)
 	flag.Parse()
 
@@ -47,10 +47,10 @@ func main() {
 			EnableLogging:  *enableLogging,
 			ExportInterval: *exportInterval,
 		},
-		PopulationSize:  *populationSize,
-		InitialInfected: *initialInfected,
-		InfectionRate:   *infectionRate,
-		RecoveryRate:    *recoveryRate,
+		PopulationSize:   *populationSize,
+		InitialInfected:  *initialInfected,
+		InfectionRate:    *infectionRate,
+		RecoveryRate:     *recoveryRate,
 		EnableStochastic: false,
 	}
 
@@ -62,7 +62,7 @@ func main() {
 	// Set up logging callbacks
 	if *enableLogging {
 		sir.SetOnTick(func(iteration int, data map[string]interface{}) error {
-			log.Printf("Tick %d: S=%d, I=%d, R=%d", 
+			log.Printf("Tick %d: S=%d, I=%d, R=%d",
 				iteration,
 				data["susceptible"],
 				data["infected"],
@@ -74,25 +74,24 @@ func main() {
 	// Set up completion callback
 	sir.SetOnComplete(func(results []engine.SimulationResult) error {
 		log.Printf("Simulation completed! Total iterations: %d", len(results))
-		
+
 		// Export final results
 		exporter := export.NewCSVExporter(*outputDir)
-		
+
 		// Export full results
 		if err := exporter.ExportResults(results, "sir_simulation_results"); err != nil {
 			log.Printf("Warning: Failed to export full results: %v", err)
 		}
-		
+
 		// Export time series data
-		if err := exporter.ExportTimeSeries(results, "sir_time_series", "timestamp", 
+		if err := exporter.ExportTimeSeries(results, "sir_time_series", "timestamp",
 			[]string{"susceptible", "infected", "recovered"}); err != nil {
 			log.Printf("Warning: Failed to export time series: %v", err)
 		}
-		
-		// Print final statistics
-		stats := sir.GetStatistics()
-		printStatistics(stats)
-		
+
+		// Print final statistics (moved to after simulation completes)
+		log.Printf("Simulation data exported successfully")
+
 		return nil
 	})
 
@@ -108,23 +107,27 @@ func main() {
 	// Run simulation
 	log.Printf("Starting SIR simulation...")
 	ctx := context.Background()
-	
+
 	startTime := time.Now()
 	if err := sir.Run(ctx); err != nil {
 		log.Fatalf("Simulation failed: %v", err)
 	}
-	
-	duration = time.Since(startTime)
-	log.Printf("Simulation completed in %v", duration)
+
+	elapsed := time.Since(startTime)
+	log.Printf("Simulation completed in %v", elapsed)
+
+	// Print final statistics after simulation completes
+	stats := sir.GetStatistics()
+	printStatistics(stats)
 
 	// Export results if not already exported
 	if len(sir.GetResults()) > 0 {
 		exporter := export.NewCSVExporter(*outputDir)
-		
+
 		// Export with timestamp
 		timestamp := time.Now().Format("20060102_150405")
 		filename := fmt.Sprintf("sir_results_%s", timestamp)
-		
+
 		if err := exporter.ExportResults(sir.GetResults(), filename); err != nil {
 			log.Printf("Warning: Failed to export results: %v", err)
 		} else {
@@ -152,44 +155,44 @@ func printConfiguration(config models.SIRConfig) {
 // printStatistics prints the simulation statistics
 func printStatistics(stats map[string]interface{}) {
 	fmt.Println("\n=== Simulation Statistics ===")
-	
+
 	if totalIterations, ok := stats["total_iterations"]; ok {
 		fmt.Printf("Total Iterations: %v\n", totalIterations)
 	}
-	
+
 	if simulationDuration, ok := stats["simulation_duration"]; ok {
 		fmt.Printf("Simulation Duration: %v\n", simulationDuration)
 	}
-	
+
 	if peakInfected, ok := stats["peak_infected"]; ok {
 		fmt.Printf("Peak Infected: %v\n", peakInfected)
 	}
-	
+
 	if peakTime, ok := stats["peak_time"]; ok {
 		fmt.Printf("Peak Time: %v\n", peakTime)
 	}
-	
+
 	if totalCases, ok := stats["total_cases"]; ok {
 		fmt.Printf("Total Cases: %v\n", totalCases)
 	}
-	
+
 	if epidemicDuration, ok := stats["epidemic_duration"]; ok {
 		fmt.Printf("Epidemic Duration: %v\n", epidemicDuration)
 	}
-	
+
 	if attackRate, ok := stats["attack_rate"]; ok {
 		fmt.Printf("Attack Rate: %.2f%%\n", float64(attackRate.(float64))*100)
 	}
-	
+
 	if doublingTime, ok := stats["doubling_time"]; ok {
 		if doublingTime.(time.Duration) > 0 {
 			fmt.Printf("Doubling Time: %v\n", doublingTime)
 		}
 	}
-	
+
 	if avgGrowthRate, ok := stats["avg_growth_rate"]; ok {
 		fmt.Printf("Average Growth Rate: %.3f\n", avgGrowthRate)
 	}
-	
+
 	fmt.Println("================================")
 }

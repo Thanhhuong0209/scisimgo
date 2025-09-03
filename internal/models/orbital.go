@@ -24,31 +24,31 @@ type Vector3D struct {
 // CelestialBody represents a celestial body in the simulation
 type CelestialBody struct {
 	Name     string   `json:"name"`
-	Mass     float64  `json:"mass"`      // kg
-	Position Vector3D `json:"position"`   // m
-	Velocity Vector3D `json:"velocity"`   // m/s
-	Radius   float64  `json:"radius"`    // m
-	Color    string   `json:"color"`     // For visualization
+	Mass     float64  `json:"mass"`     // kg
+	Position Vector3D `json:"position"` // m
+	Velocity Vector3D `json:"velocity"` // m/s
+	Radius   float64  `json:"radius"`   // m
+	Color    string   `json:"color"`    // For visualization
 }
 
 // OrbitalModel represents the orbital mechanics simulation
 type OrbitalModel struct {
 	*engine.BaseSimulation
-	
+
 	// Model parameters
 	GravitationalConstant float64 `json:"gravitational_constant"` // G = 6.67430e-11 m3/(kg*s2)
-	TimeStep             float64 `json:"time_step"`              // Simulation time step in seconds
-	Enable3D             bool    `json:"enable_3d"`              // Enable 3D simulation
-	
+	TimeStep              float64 `json:"time_step"`              // Simulation time step in seconds
+	Enable3D              bool    `json:"enable_3d"`              // Enable 3D simulation
+
 	// Celestial bodies
 	Bodies []*CelestialBody `json:"bodies"`
-	
+
 	// Statistical tracking
 	OrbitalPeriods map[string]float64 `json:"orbital_periods"` // Period in seconds
-	Perihelion     map[string]float64 `json:"perihelion"`     // Closest approach to sun
-	Aphelion       map[string]float64 `json:"aphelion"`       // Farthest distance from sun
-	Eccentricities map[string]float64 `json:"eccentricities"` // Orbital eccentricity
-	
+	Perihelion     map[string]float64 `json:"perihelion"`      // Closest approach to sun
+	Aphelion       map[string]float64 `json:"aphelion"`        // Farthest distance from sun
+	Eccentricities map[string]float64 `json:"eccentricities"`  // Orbital eccentricity
+
 	// Random number generator
 	rng *rand.Rand
 }
@@ -56,10 +56,10 @@ type OrbitalModel struct {
 // OrbitalConfig extends base simulation config with orbital-specific parameters
 type OrbitalConfig struct {
 	engine.SimulationConfig
-	GravitationalConstant float64 `json:"gravitational_constant"`
-	TimeStep             float64 `json:"time_step"`
-	Enable3D             bool    `json:"enable_3d"`
-	Bodies               []*CelestialBody `json:"bodies"`
+	GravitationalConstant float64          `json:"gravitational_constant"`
+	TimeStep              float64          `json:"time_step"`
+	Enable3D              bool             `json:"enable_3d"`
+	Bodies                []*CelestialBody `json:"bodies"`
 }
 
 // NewOrbitalModel creates a new orbital mechanics model
@@ -72,11 +72,11 @@ func NewOrbitalModel() *OrbitalModel {
 		Aphelion:       make(map[string]float64),
 		Eccentricities: make(map[string]float64),
 	}
-	
+
 	// Override the callbacks
 	om.BaseSimulation.SetOnTick(om.onTick)
 	om.BaseSimulation.SetOnComplete(om.onComplete)
-	
+
 	return om
 }
 
@@ -86,25 +86,25 @@ func (om *OrbitalModel) Initialize(config OrbitalConfig) error {
 	if err := om.BaseSimulation.Initialize(config.SimulationConfig); err != nil {
 		return err
 	}
-	
+
 	// Validate model-specific parameters
 	if config.GravitationalConstant <= 0 {
 		return NewValidationError("gravitational constant must be positive")
 	}
-	
+
 	if config.TimeStep <= 0 {
 		return NewValidationError("time step must be positive")
 	}
-	
+
 	if len(config.Bodies) < 2 {
 		return NewValidationError("at least 2 celestial bodies required")
 	}
-	
+
 	// Set model parameters
 	om.GravitationalConstant = config.GravitationalConstant
 	om.TimeStep = config.TimeStep
 	om.Enable3D = config.Enable3D
-	
+
 	// Deep copy bodies to avoid external modification
 	om.Bodies = make([]*CelestialBody, len(config.Bodies))
 	for i, body := range config.Bodies {
@@ -117,10 +117,10 @@ func (om *OrbitalModel) Initialize(config OrbitalConfig) error {
 			Color:    body.Color,
 		}
 	}
-	
+
 	// Initialize orbital parameters
 	om.initializeOrbitalParameters()
-	
+
 	return nil
 }
 
@@ -129,11 +129,11 @@ func (om *OrbitalModel) initializeOrbitalParameters() {
 	for _, body := range om.Bodies {
 		// Calculate distance from origin (assuming sun at origin)
 		distance := om.calculateDistance(body.Position, Vector3D{0, 0, 0})
-		
+
 		// Initialize perihelion and aphelion
 		om.Perihelion[body.Name] = distance
 		om.Aphelion[body.Name] = distance
-		
+
 		// Calculate eccentricity (simplified)
 		om.Eccentricities[body.Name] = 0.0
 	}
@@ -143,31 +143,31 @@ func (om *OrbitalModel) initializeOrbitalParameters() {
 func (om *OrbitalModel) onTick(iteration int, data map[string]interface{}) error {
 	// Calculate gravitational forces between all bodies
 	forces := om.calculateGravitationalForces()
-	
+
 	// Update velocities and positions
 	om.updateBodies(forces)
-	
+
 	// Update orbital parameters
 	om.updateOrbitalParameters()
-	
+
 	return nil
 }
 
 // calculateGravitationalForces calculates gravitational forces between all bodies
 func (om *OrbitalModel) calculateGravitationalForces() map[string]Vector3D {
 	forces := make(map[string]Vector3D)
-	
+
 	// Initialize forces to zero
 	for _, body := range om.Bodies {
 		forces[body.Name] = Vector3D{0, 0, 0}
 	}
-	
+
 	// Calculate forces between all pairs of bodies
 	for i, body1 := range om.Bodies {
 		for j, body2 := range om.Bodies {
 			if i != j {
 				force := om.calculateGravitationalForce(body1, body2)
-				
+
 				// Add force to body1 (positive)
 				currentForce := forces[body1.Name]
 				forces[body1.Name] = Vector3D{
@@ -175,7 +175,7 @@ func (om *OrbitalModel) calculateGravitationalForces() map[string]Vector3D {
 					Y: currentForce.Y + force.Y,
 					Z: currentForce.Z + force.Z,
 				}
-				
+
 				// Subtract force from body2 (negative, Newton's 3rd law)
 				currentForce = forces[body2.Name]
 				forces[body2.Name] = Vector3D{
@@ -186,7 +186,7 @@ func (om *OrbitalModel) calculateGravitationalForces() map[string]Vector3D {
 			}
 		}
 	}
-	
+
 	return forces
 }
 
@@ -198,25 +198,25 @@ func (om *OrbitalModel) calculateGravitationalForce(body1, body2 *CelestialBody)
 		Y: body2.Position.Y - body1.Position.Y,
 		Z: body2.Position.Z - body1.Position.Z,
 	}
-	
+
 	// Calculate distance magnitude
 	distance := om.calculateDistance(body1.Position, body2.Position)
-	
+
 	// Avoid division by zero
 	if distance < 1e-10 {
 		return Vector3D{0, 0, 0}
 	}
-	
+
 	// Calculate force magnitude: F = G * m1 * m2 / r2
 	forceMagnitude := om.GravitationalConstant * body1.Mass * body2.Mass / (distance * distance)
-	
+
 	// Calculate unit vector
 	unitVector := Vector3D{
 		X: distanceVector.X / distance,
 		Y: distanceVector.Y / distance,
 		Z: distanceVector.Z / distance,
 	}
-	
+
 	// Return force vector
 	return Vector3D{
 		X: unitVector.X * forceMagnitude,
@@ -229,19 +229,19 @@ func (om *OrbitalModel) calculateGravitationalForce(body1, body2 *CelestialBody)
 func (om *OrbitalModel) updateBodies(forces map[string]Vector3D) {
 	for _, body := range om.Bodies {
 		force := forces[body.Name]
-		
+
 		// Calculate acceleration: a = F / m
 		acceleration := Vector3D{
 			X: force.X / body.Mass,
 			Y: force.Y / body.Mass,
 			Z: force.Z / body.Mass,
 		}
-		
+
 		// Update velocity: v = v0 + a * dt
 		body.Velocity.X += acceleration.X * om.TimeStep
 		body.Velocity.Y += acceleration.Y * om.TimeStep
 		body.Velocity.Z += acceleration.Z * om.TimeStep
-		
+
 		// Update position: r = r0 + v * dt
 		body.Position.X += body.Velocity.X * om.TimeStep
 		body.Position.Y += body.Velocity.Y * om.TimeStep
@@ -254,17 +254,17 @@ func (om *OrbitalModel) updateOrbitalParameters() {
 	for _, body := range om.Bodies {
 		// Calculate distance from origin (assuming sun at origin)
 		distance := om.calculateDistance(body.Position, Vector3D{0, 0, 0})
-		
+
 		// Update perihelion (closest approach)
 		if distance < om.Perihelion[body.Name] {
 			om.Perihelion[body.Name] = distance
 		}
-		
+
 		// Update aphelion (farthest distance)
 		if distance > om.Aphelion[body.Name] {
 			om.Aphelion[body.Name] = distance
 		}
-		
+
 		// Calculate eccentricity: e = (aphelion - perihelion) / (aphelion + perihelion)
 		perihelion := om.Perihelion[body.Name]
 		aphelion := om.Aphelion[body.Name]
@@ -296,10 +296,10 @@ func (om *OrbitalModel) calculateOrbitalPeriods(results []engine.SimulationResul
 	for _, body := range om.Bodies {
 		// Estimate period based on current velocity and distance
 		distance := om.calculateDistance(body.Position, Vector3D{0, 0, 0})
-		velocity := math.Sqrt(body.Velocity.X*body.Velocity.X + 
-			body.Velocity.Y*body.Velocity.Y + 
+		velocity := math.Sqrt(body.Velocity.X*body.Velocity.X +
+			body.Velocity.Y*body.Velocity.Y +
 			body.Velocity.Z*body.Velocity.Z)
-		
+
 		if velocity > 0 {
 			// Approximate period: T = 2πr / v
 			period := 2 * math.Pi * distance / velocity
@@ -317,7 +317,7 @@ func (om *OrbitalModel) generateTickData() map[string]interface{} {
 		"time_step": om.TimeStep,
 		"enable_3d": om.Enable3D,
 	}
-	
+
 	// Add body data
 	for _, body := range om.Bodies {
 		prefix := body.Name + "_"
@@ -331,24 +331,24 @@ func (om *OrbitalModel) generateTickData() map[string]interface{} {
 		data[prefix+"radius"] = body.Radius
 		data[prefix+"distance_from_origin"] = om.calculateDistance(body.Position, Vector3D{0, 0, 0})
 	}
-	
+
 	// Add orbital parameters
 	for name, period := range om.OrbitalPeriods {
 		data[name+"_orbital_period"] = period
 	}
-	
+
 	for name, perihelion := range om.Perihelion {
 		data[name+"_perihelion"] = perihelion
 	}
-	
+
 	for name, aphelion := range om.Aphelion {
 		data[name+"_aphelion"] = aphelion
 	}
-	
+
 	for name, eccentricity := range om.Eccentricities {
 		data[name+"_eccentricity"] = eccentricity
 	}
-	
+
 	return data
 }
 
@@ -364,7 +364,7 @@ func (om *OrbitalModel) GetCurrentState() map[string]interface{} {
 		"aphelion":               om.Aphelion,
 		"eccentricities":         om.Eccentricities,
 	}
-	
+
 	// Add body states
 	for _, body := range om.Bodies {
 		state[body.Name] = map[string]interface{}{
@@ -375,24 +375,24 @@ func (om *OrbitalModel) GetCurrentState() map[string]interface{} {
 			"color":    body.Color,
 		}
 	}
-	
+
 	return state
 }
 
 // GetStatistics returns comprehensive orbital statistics
 func (om *OrbitalModel) GetStatistics() map[string]interface{} {
 	results := om.BaseSimulation.GetResults()
-	
+
 	if len(results) == 0 {
 		return map[string]interface{}{}
 	}
-	
+
 	// Calculate trajectory statistics
 	trajectoryStats := om.calculateTrajectoryStatistics(results)
-	
+
 	// Calculate energy statistics
 	energyStats := om.calculateEnergyStatistics(results)
-	
+
 	stats := map[string]interface{}{
 		"total_iterations":    len(results),
 		"simulation_duration": time.Since(results[0].Timestamp),
@@ -405,19 +405,19 @@ func (om *OrbitalModel) GetStatistics() map[string]interface{} {
 		"trajectory_stats":    trajectoryStats,
 		"energy_stats":        energyStats,
 	}
-	
+
 	return stats
 }
 
 // calculateTrajectoryStatistics calculates statistics about body trajectories
 func (om *OrbitalModel) calculateTrajectoryStatistics(results []engine.SimulationResult) map[string]interface{} {
 	trajectoryStats := make(map[string]interface{})
-	
+
 	for _, body := range om.Bodies {
 		var positions []Vector3D
 		var velocities []Vector3D
 		var distances []float64
-		
+
 		for _, result := range results {
 			// Extract position data
 			if posX, ok := result.Data[body.Name+"_position_x"]; ok {
@@ -433,7 +433,7 @@ func (om *OrbitalModel) calculateTrajectoryStatistics(results []engine.Simulatio
 					}
 				}
 			}
-			
+
 			// Extract velocity data
 			if velX, ok := result.Data[body.Name+"_velocity_x"]; ok {
 				if velY, ok := result.Data[body.Name+"_velocity_y"]; ok {
@@ -448,7 +448,7 @@ func (om *OrbitalModel) calculateTrajectoryStatistics(results []engine.Simulatio
 					}
 				}
 			}
-			
+
 			// Extract distance data
 			if dist, ok := result.Data[body.Name+"_distance_from_origin"]; ok {
 				if d, ok := dist.(float64); ok {
@@ -456,7 +456,7 @@ func (om *OrbitalModel) calculateTrajectoryStatistics(results []engine.Simulatio
 				}
 			}
 		}
-		
+
 		// Calculate trajectory statistics for this body
 		bodyStats := map[string]interface{}{
 			"total_distance_traveled": calculateTotalDistance(positions),
@@ -467,10 +467,10 @@ func (om *OrbitalModel) calculateTrajectoryStatistics(results []engine.Simulatio
 			"min_distance":            calculateMinFloat(distances),
 			"avg_distance":            calculateAverageFloat(distances),
 		}
-		
+
 		trajectoryStats[body.Name] = bodyStats
 	}
-	
+
 	return trajectoryStats
 }
 
@@ -479,11 +479,11 @@ func (om *OrbitalModel) calculateEnergyStatistics(results []engine.SimulationRes
 	var totalKineticEnergy []float64
 	var totalPotentialEnergy []float64
 	var totalEnergy []float64
-	
+
 	for _, result := range results {
 		kinetic := 0.0
 		potential := 0.0
-		
+
 		// Calculate kinetic energy for all bodies
 		for _, body := range om.Bodies {
 			if velX, ok := result.Data[body.Name+"_velocity_x"]; ok {
@@ -501,7 +501,7 @@ func (om *OrbitalModel) calculateEnergyStatistics(results []engine.SimulationRes
 				}
 			}
 		}
-		
+
 		// Calculate potential energy (simplified)
 		for i, body1 := range om.Bodies {
 			for j, body2 := range om.Bodies {
@@ -539,12 +539,12 @@ func (om *OrbitalModel) calculateEnergyStatistics(results []engine.SimulationRes
 				}
 			}
 		}
-		
+
 		totalKineticEnergy = append(totalKineticEnergy, kinetic)
 		totalPotentialEnergy = append(totalPotentialEnergy, potential)
 		totalEnergy = append(totalEnergy, kinetic+potential)
 	}
-	
+
 	return map[string]interface{}{
 		"kinetic_energy": map[string]interface{}{
 			"initial": totalKineticEnergy[0],
@@ -561,11 +561,11 @@ func (om *OrbitalModel) calculateEnergyStatistics(results []engine.SimulationRes
 			"avg":     calculateAverageFloat(totalPotentialEnergy),
 		},
 		"total_energy": map[string]interface{}{
-			"initial": totalEnergy[0],
-			"final":   totalEnergy[len(totalEnergy)-1],
-			"max":     calculateMaxFloat(totalEnergy),
-			"min":     calculateMinFloat(totalEnergy),
-			"avg":     calculateAverageFloat(totalEnergy),
+			"initial":            totalEnergy[0],
+			"final":              totalEnergy[len(totalEnergy)-1],
+			"max":                calculateMaxFloat(totalEnergy),
+			"min":                calculateMinFloat(totalEnergy),
+			"avg":                calculateAverageFloat(totalEnergy),
 			"conservation_error": math.Abs(totalEnergy[0] - totalEnergy[len(totalEnergy)-1]),
 		},
 	}
@@ -576,7 +576,7 @@ func calculateTotalDistance(positions []Vector3D) float64 {
 	if len(positions) < 2 {
 		return 0
 	}
-	
+
 	total := 0.0
 	for i := 1; i < len(positions); i++ {
 		dx := positions[i].X - positions[i-1].X
@@ -591,7 +591,7 @@ func calculateMaxVelocity(velocities []Vector3D) float64 {
 	if len(velocities) == 0 {
 		return 0
 	}
-	
+
 	max := 0.0
 	for _, vel := range velocities {
 		speed := math.Sqrt(vel.X*vel.X + vel.Y*vel.Y + vel.Z*vel.Z)
@@ -606,7 +606,7 @@ func calculateMinVelocity(velocities []Vector3D) float64 {
 	if len(velocities) == 0 {
 		return 0
 	}
-	
+
 	min := math.Inf(1)
 	for _, vel := range velocities {
 		speed := math.Sqrt(vel.X*vel.X + vel.Y*vel.Y + vel.Z*vel.Z)
@@ -624,11 +624,54 @@ func calculateAverageVelocity(velocities []Vector3D) float64 {
 	if len(velocities) == 0 {
 		return 0
 	}
-	
+
 	sum := 0.0
 	for _, vel := range velocities {
 		speed := math.Sqrt(vel.X*vel.X + vel.Y*vel.Y + vel.Z*vel.Z)
 		sum += speed
 	}
 	return sum / float64(len(velocities))
+}
+
+// calculateMaxFloat finds the maximum value in a slice of floats
+func calculateMaxFloat(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+
+	max := values[0]
+	for _, val := range values {
+		if val > max {
+			max = val
+		}
+	}
+	return max
+}
+
+// calculateMinFloat finds the minimum value in a slice of floats
+func calculateMinFloat(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+
+	min := values[0]
+	for _, val := range values {
+		if val < min {
+			min = val
+		}
+	}
+	return min
+}
+
+// calculateAverageFloat calculates the average of a slice of floats
+func calculateAverageFloat(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+
+	sum := 0.0
+	for _, val := range values {
+		sum += val
+	}
+	return sum / float64(len(values))
 }
