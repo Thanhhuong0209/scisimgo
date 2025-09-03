@@ -1,5 +1,5 @@
 # Multi-stage build for SciSimGo
-FROM golang:1.25-alpine AS go-builder
+FROM golang:1.22-alpine AS go-builder
 
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates tzdata
@@ -7,7 +7,7 @@ RUN apk add --no-cache git ca-certificates tzdata
 # Set working directory
 WORKDIR /app
 
-# Copy go mod files
+# Copy go mod files first for better caching
 COPY go.mod go.sum ./
 
 # Download dependencies
@@ -16,13 +16,13 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o sir-simulator ./cmd/sir-simulator
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o predator-prey ./cmd/predator-prey
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o orbital-sim ./cmd/orbital-sim
+# Build all applications in parallel
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-w -s" -o sir-simulator ./cmd/sir-simulator && \
+    CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-w -s" -o predator-prey ./cmd/predator-prey && \
+    CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-w -s" -o orbital-sim ./cmd/orbital-sim
 
 # Python stage for data analysis
-FROM python:3.13-slim AS python-builder
+FROM python:3.11-slim AS python-builder
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -35,7 +35,8 @@ WORKDIR /app
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Final stage
 FROM alpine:latest
@@ -56,7 +57,7 @@ COPY --from=go-builder /app/predator-prey /app/predator-prey
 COPY --from=go-builder /app/orbital-sim /app/orbital-sim
 
 # Copy Python environment from python-builder stage
-COPY --from=python-builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=python-builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=python-builder /usr/local/bin /usr/local/bin
 
 # Copy source code and scripts
