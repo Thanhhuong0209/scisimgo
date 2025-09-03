@@ -3,7 +3,6 @@ package logging
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -61,14 +60,14 @@ func ParseLogLevel(level string) LogLevel {
 
 // LogEntry represents a single log entry
 type LogEntry struct {
-	Timestamp   time.Time
-	Level       LogLevel
-	Component   string
-	Message     string
-	Fields      map[string]interface{}
-	Caller      string
-	CallerLine  int
-	CallerFunc  string
+	Timestamp  time.Time
+	Level      LogLevel
+	Component  string
+	Message    string
+	Fields     map[string]interface{}
+	Caller     string
+	CallerLine int
+	CallerFunc string
 }
 
 // Logger provides structured logging functionality
@@ -96,7 +95,7 @@ func (f *DefaultFormatter) Format(entry LogEntry) string {
 	if entry.Caller != "" {
 		callerInfo = fmt.Sprintf(" [%s:%d %s]", entry.Caller, entry.CallerLine, entry.CallerFunc)
 	}
-	
+
 	fieldsStr := ""
 	if len(entry.Fields) > 0 {
 		fieldPairs := make([]string, 0, len(entry.Fields))
@@ -105,7 +104,7 @@ func (f *DefaultFormatter) Format(entry LogEntry) string {
 		}
 		fieldsStr = fmt.Sprintf(" {%s}", strings.Join(fieldPairs, ", "))
 	}
-	
+
 	return fmt.Sprintf("[%s] %s [%s]%s: %s%s",
 		entry.Timestamp.Format("2006-01-02 15:04:05.000"),
 		entry.Level.String(),
@@ -129,12 +128,12 @@ func (f *JSONFormatter) Format(entry LogEntry) string {
 		}
 		fieldsStr = fmt.Sprintf(",%s", strings.Join(fieldPairs, ","))
 	}
-	
+
 	callerInfo := ""
 	if entry.Caller != "" {
 		callerInfo = fmt.Sprintf(`,"caller":"%s:%d","function":"%s"`, entry.Caller, entry.CallerLine, entry.CallerFunc)
 	}
-	
+
 	return fmt.Sprintf(`{"timestamp":"%s","level":"%s","component":"%s","message":"%s"%s%s}`,
 		entry.Timestamp.Format(time.RFC3339Nano),
 		entry.Level.String(),
@@ -203,10 +202,10 @@ func (l *Logger) log(level LogLevel, message string, fields map[string]interface
 	if level < l.level {
 		return
 	}
-	
+
 	l.mu.RLock()
 	defer l.mu.RUnlock()
-	
+
 	// Get caller information
 	var caller, callerFunc string
 	var callerLine int
@@ -219,7 +218,7 @@ func (l *Logger) log(level LogLevel, message string, fields map[string]interface
 			}
 		}
 	}
-	
+
 	// Merge global fields with entry fields
 	mergedFields := make(map[string]interface{})
 	for k, v := range l.fields {
@@ -228,18 +227,18 @@ func (l *Logger) log(level LogLevel, message string, fields map[string]interface
 	for k, v := range fields {
 		mergedFields[k] = v
 	}
-	
+
 	entry := LogEntry{
-		Timestamp:   time.Now(),
-		Level:       level,
-		Component:   l.component,
-		Message:     message,
-		Fields:      mergedFields,
-		Caller:      caller,
-		CallerLine:  callerLine,
-		CallerFunc:  callerFunc,
+		Timestamp:  time.Now(),
+		Level:      level,
+		Component:  l.component,
+		Message:    message,
+		Fields:     mergedFields,
+		Caller:     caller,
+		CallerLine: callerLine,
+		CallerFunc: callerFunc,
 	}
-	
+
 	// Format and write the log entry
 	formatted := l.formatter.Format(entry)
 	fmt.Fprintln(l.output, formatted)
@@ -295,17 +294,17 @@ func (l *Logger) Fatal(message string, fields ...map[string]interface{}) {
 func (l *Logger) WithFields(fields map[string]interface{}) *Logger {
 	newLogger := *l
 	newLogger.fields = make(map[string]interface{})
-	
+
 	// Copy existing fields
 	for k, v := range l.fields {
 		newLogger.fields[k] = v
 	}
-	
+
 	// Add new fields
 	for k, v := range fields {
 		newLogger.fields[k] = v
 	}
-	
+
 	return &newLogger
 }
 
@@ -317,11 +316,11 @@ func (l *Logger) WithField(key string, value interface{}) *Logger {
 // FileLogger provides file-based logging with rotation
 type FileLogger struct {
 	*Logger
-	filePath     string
-	maxSize      int64
-	maxFiles     int
-	currentFile  *os.File
-	mu           sync.Mutex
+	filePath    string
+	maxSize     int64
+	maxFiles    int
+	currentFile *os.File
+	mu          sync.Mutex
 }
 
 // NewFileLogger creates a new file logger
@@ -331,24 +330,24 @@ func NewFileLogger(component, filePath string, level LogLevel, maxSize int64, ma
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create log directory: %w", err)
 	}
-	
+
 	// Open log file
 	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open log file: %w", err)
 	}
-	
+
 	logger := NewLogger(component, level)
 	logger.SetOutput(file)
-	
+
 	fileLogger := &FileLogger{
-		Logger:   logger,
-		filePath: filePath,
-		maxSize:  maxSize,
-		maxFiles: maxFiles,
+		Logger:      logger,
+		filePath:    filePath,
+		maxSize:     maxSize,
+		maxFiles:    maxFiles,
 		currentFile: file,
 	}
-	
+
 	return fileLogger, nil
 }
 
@@ -356,7 +355,7 @@ func NewFileLogger(component, filePath string, level LogLevel, maxSize int64, ma
 func (fl *FileLogger) Close() error {
 	fl.mu.Lock()
 	defer fl.mu.Unlock()
-	
+
 	if fl.currentFile != nil {
 		return fl.currentFile.Close()
 	}
@@ -367,43 +366,43 @@ func (fl *FileLogger) Close() error {
 func (fl *FileLogger) rotate() error {
 	fl.mu.Lock()
 	defer fl.mu.Unlock()
-	
+
 	// Check file size
 	info, err := fl.currentFile.Stat()
 	if err != nil {
 		return err
 	}
-	
+
 	if info.Size() < fl.maxSize {
 		return nil
 	}
-	
+
 	// Close current file
 	fl.currentFile.Close()
-	
+
 	// Rotate existing files
 	for i := fl.maxFiles - 1; i > 0; i-- {
 		oldPath := fmt.Sprintf("%s.%d", fl.filePath, i)
 		newPath := fmt.Sprintf("%s.%d", fl.filePath, i+1)
-		
+
 		if _, err := os.Stat(oldPath); err == nil {
 			os.Rename(oldPath, newPath)
 		}
 	}
-	
+
 	// Rename current file
 	backupPath := fmt.Sprintf("%s.1", fl.filePath)
 	os.Rename(fl.filePath, backupPath)
-	
+
 	// Create new file
 	file, err := os.OpenFile(fl.filePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		return err
 	}
-	
+
 	fl.currentFile = file
 	fl.Logger.SetOutput(file)
-	
+
 	return nil
 }
 

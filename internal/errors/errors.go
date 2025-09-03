@@ -391,7 +391,6 @@ const (
 	
 	// Export error codes
 	ErrCodeExportFailed        = "EXPORT_FAILED"
-	ErrCodeInvalidFormat       = "INVALID_FORMAT"
 	ErrCodePermissionDenied    = "PERMISSION_DENIED"
 	ErrCodeDiskFull            = "DISK_FULL"
 	
