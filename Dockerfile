@@ -22,7 +22,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-w -s" -o 
     CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-w -s" -o orbital-sim ./cmd/orbital-sim
 
 # Python stage for data analysis
-FROM python:3.11-slim AS python-builder
+FROM python:3.14-slim AS python-builder
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
