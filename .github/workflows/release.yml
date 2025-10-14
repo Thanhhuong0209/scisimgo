@@ -131,7 +131,7 @@ jobs:
         name: changelog
         path: ./
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       if: ${{ needs.version.result == 'success' }}
       with:
         tag_name: ${{ needs.version.outputs.version }}
