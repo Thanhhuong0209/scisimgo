@@ -111,7 +111,7 @@ jobs:
         echo "Changelog generated successfully"
         cat CHANGELOG.md
     - name: Upload changelog
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v5
       with:
         name: changelog
         path: CHANGELOG.md
