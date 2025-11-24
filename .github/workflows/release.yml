@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Determine version
@@ -70,7 +70,7 @@ jobs:
     needs: [version]
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Generate changelog
@@ -124,7 +124,7 @@ jobs:
     if: always()
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Download changelog
       uses: actions/download-artifact@v3
       with:

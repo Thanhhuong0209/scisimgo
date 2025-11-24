@@ -33,7 +33,7 @@ jobs:
     environment: staging
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Check deployment readiness
       run: |
         echo "Checking deployment readiness for staging..."
@@ -95,7 +95,7 @@ jobs:
     needs: [deploy-staging]
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Check production readiness
       run: |
         echo "Checking production deployment readiness..."
