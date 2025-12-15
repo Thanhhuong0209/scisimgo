@@ -126,7 +126,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     - name: Download changelog
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v7
       with:
         name: changelog
         path: ./
